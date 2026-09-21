@@ -1,10 +1,23 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 aliases:
-  <repo name>-reviewers:
-  - <maintainer username1>
-  - <maintainer username2>
-  - <maintainer username3>
-  <repo name>-approvers:
-  - <maintainer username1>
-  - <maintainer username2>
+  promql-querier-reviewers:
+  - chrkl
+  - istvanballok
+  - rickardsjp
+  - vicwicker
+  - rrhubenov
+  - Bobi-Wan
+  - iypetrov
+  - nickytd
+  - TeodorDichev
+  promql-querier-approvers:
+  - chrkl
+  - istvanballok
+  - rickardsjp
+  - vicwicker
+  - rrhubenov
+  - Bobi-Wan
+  - iypetrov
+  - nickytd
+  - TeodorDichev
