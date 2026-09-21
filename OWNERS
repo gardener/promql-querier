@@ -1,6 +1,6 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 reviewers:
-- <repo name>-reviewers
+- promql-querier-reviewers
 approvers:
-- <repo name>-approvers
+- promql-querier-approvers
