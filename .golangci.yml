@@ -1,0 +1,28 @@
+version: "2"
+
+run:
+  build-tags:
+    - compare
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - misspell
+    - unconvert
+    - revive
+  exclusions:
+    paths:
+      - tmp
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/gardener/promql-querier)

@@ -1,99 +1,105 @@
-# <repo name>
+# PromQL Querier
 
-[![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
+Global querying across independent Prometheus instances.
 
-## How to use this repository template
+## What it is
 
-This template repository can be used to seed new git repositories in the gardener github organisation.
+The PromQL Querier sits in front of many independent Prometheus downstreams and queries them as if it was a single Prometheus instance.
+Each downstream is configured with a set of virtual labels, for example `env="prod"` and `region="eu"`, that the downstream itself does not store.
+The PromQL Querier owns those labels and injects them into the query results.
 
-- [Create the new repository](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template)
-  based on this template repository
-- Replacing placeholders:
-  - In file `REUSE.toml` replace placeholder `<repo name>` with the name of your new repository.
-  - In file `CODEOWNERS` replace `<repo name>` and `<maintainer team>`. Use the name of the github team in [gardener teams](https://github.com/orgs/gardener/teams) defining maintainers of the new repository.
-  - In files `OWNERS` and `OWNERS_ALIASES` replace `<repo name>`. Assign the appropriate reviewers and approvers.
-- Set the repository description in the "About" section of your repository
-- Describe the new component in additional sections in this `README.md`
-- Ask the [Owner of the gardener github organisation](https://github.com/orgs/gardener/people?query=role%3Aowner)
-  - to double-check the initial content of this repository
-  - to create the maintainer team for this new repository
-  - to make this repository public
-  - protect at least the master branch requiring mandatory code review by the maintainers defined in CODEOWNERS
-  - grant admin permission to the maintainers team of the new repository defined in CODEOWNERS
+## How it works
 
-## Maintain copyright and license information
-By default all source code files are under `Apache 2.0` and all markdown files are under `Creative Commons` license.
+The PromQL Querier parses the incoming PromQL into an AST and walks it, splitting the query into expressions that can be pushed down for evaluation in the downstreams directly and a local query that combines those pushed-down results and evaluates the remainder.
+These expressions are the partitions, and the partitions plus the local query are the plan.
 
-When creating new source code files the license and copyright information should be provided using corresponding SPDX headers.
+Each partition is routed by resolving its virtual label matchers against the declared downstreams, so a partition constrained to `region="eu"` only touches the `eu` downstreams.
+The PromQL Querier decomposes aggregations in a way that allows them to be pushed down.
+For example, an average is pushed down as a sum and a count and recombined as their ratio.
 
-```
-/*
- * SPDX-FileCopyrightText: Contributors to the Gardener project
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+The PromQL Querier then executes the plan by fanning the partitions out to their downstreams over the Prometheus HTTP query API.
+Finally, the Prometheus PromQL engine evaluates the local query over the partial results, and the answer is returned to the client.
+
+See [docs/promql-querier.md](docs/promql-querier.md) for more details.
+
+## Build
+
+Build the UI and the binary:
+
+```sh
+make ui build
 ```
 
-### Third-party source code
+This produces `bin/promql-querier`.
 
-If you copy third-party code into this repository or fork a repository, you must keep the license and copyright information (usually defined in the header of the file).
+The web UI is a bundle embedded into the binary.
+If you change UI sources, rebuild the bundle before building the binary:
 
-In addition you should adapt the `REUSE.toml` file and assign the correct copyright and license information.
-
-**Example `REUSE.toml` file if you copy source code into your repository:**
-```toml
-version = 1
-SPDX-PackageName = "Gardener <repo name>"
-SPDX-PackageSupplier = "The Gardener project <gardener@googlegroups.com>"
-SPDX-PackageDownloadLocation = "https://github.com/gardener/<repo name>"
-
-[[annotations]]
-path = ["*"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Contributors to the Gardener project"
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "**.md"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Contributors to the Gardener project"
-SPDX-License-Identifier = "CC-BY-4.0"
-
-# third-party - copied source code
-[[annotations]]
-path = "pkg/utils/validation/kubernetes/core/*"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2014 The Kubernetes Authors."
-SPDX-License-Identifier = "Apache-2.0"
-```
-**Example `REUSE.toml` file if you have forked a repository:**
-```toml
-version = 1
-SPDX-PackageName = "Gardener fork of kubernetes/autoscaler"
-SPDX-PackageSupplier = "The Gardener project <gardener@googlegroups.com>"
-SPDX-PackageDownloadLocation = "https://github.com/gardener/autoscaler"
-# Comment: This is a fork of kubernetes/autoscaler (https://github.com/kubernetes/autoscaler)
-
-[[annotations]]
-path = ["*"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2016-2018 The Kubernetes Authors."
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = ".ci/*"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Contributors to the Gardener project"
-SPDX-License-Identifier = "Apache-2.0"
+```sh
+make ui
 ```
 
-#### Modifications
-In case you modify copied/forked source code you must state this in the header via the following text:
+## Run
 
-**Modifications Copyright <year> contributors to the Gardener project**
+The PromQL Querier needs an endpoints file that lists each downstream and its virtual labels.
+Each `url` is a plain Prometheus HTTP endpoint.
+A minimal example:
 
+```yaml
+endpoints:
+  - url: http://prometheus-eu:9090
+    labels:
+      env: prod
+      region: eu
+  - url: http://prometheus-us:9090
+    labels:
+      env: prod
+      region: us
+```
 
-### Get your reuse badge
-To get your project reuse compliant you should register it [here](https://api.reuse.software/register) using your SAP email address. After confirming your email, an inital reuse check is done by the reuse API.
+Start the PromQL Querier against it:
 
-To add the badge to your project's `README.md` file, use the snipped provided by the reuse API.
+```sh
+./bin/promql-querier --config.endpoints-file endpoints.yaml
+```
+
+The PromQL Querier serves the Prometheus HTTP query API on the listen address, defaulting to `:9090`.
+
+Run `./bin/promql-querier --help` for the full list of flags and their defaults.
+
+## Playground
+
+To play around with the PromQL Querier without setting up your own Prometheus instances, build the UI and binary, download Prometheus once, and run:
+
+```sh
+make prometheus
+make playground
+```
+
+`make prometheus` downloads a Prometheus binary into `tmp/bin/prometheus` and skips the download when it is already present.
+
+This starts four Prometheus downstreams (`prod-eu`, `prod-us`, `staging-eu`, `staging-global`), and the PromQL Querier in front of them.
+It also starts a reference Prometheus holding the union of all four downstreams, with the virtual labels baked into each series, to serve as ground truth.
+It then prints the URLs and holds until you press Ctrl+C.
+
+## Development
+
+Run the unit tests:
+
+```sh
+make test
+```
+
+Run the compare test suite that diffs the PromQL Querier against a real Prometheus setup.
+It needs the Prometheus binary that `make prometheus` downloads:
+
+```sh
+make prometheus
+make test-compare
+```
+
+Vet and lint:
+
+```sh
+make check
+```

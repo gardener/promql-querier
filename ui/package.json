@@ -1,0 +1,49 @@
+{
+    "name": "promql-querier-ui",
+    "version": "0.0.0",
+    "private": true,
+    "license": "Apache-2.0",
+    "description": "PromQL Querier web UI",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "typecheck": "tsc --noEmit",
+        "fmt": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+        "fmt-check": "prettier --list-different \"src/**/*.{ts,tsx,css}\"",
+        "check": "npm run typecheck && npm run fmt-check",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@codemirror/autocomplete": "^6.20.3",
+        "@codemirror/commands": "^6.11.0",
+        "@codemirror/language": "^6.12.4",
+        "@codemirror/lint": "^6.9.7",
+        "@codemirror/state": "^6.7.4",
+        "@codemirror/view": "^6.43.11",
+        "@lezer/common": "^1.5.2",
+        "@lezer/highlight": "^1.2.3",
+        "@mantine/core": "^9.6.0",
+        "@mantine/dates": "^9.6.0",
+        "@mantine/hooks": "^9.6.0",
+        "@prometheus-io/codemirror-promql": "0.313.3",
+        "@tabler/icons-react": "^3.46.0",
+        "dayjs": "^1.11.23",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
+        "uplot": "1.6.32"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.18",
+        "@types/react-dom": "^19.2.7",
+        "@vitejs/plugin-react": "^6.1.1",
+        "prettier": "^3.9.6",
+        "typescript": "^7.0.2",
+        "vite": "^8.2.2",
+        "vitest": "^5.0.0"
+    },
+    "allowScripts": {
+        "esbuild@0.21.5": true
+    }
+}

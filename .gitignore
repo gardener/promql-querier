@@ -1,0 +1,17 @@
+# Build output
+bin/
+tmp/
+/promql-querier
+/playground
+
+# UI build files
+ui/node_modules/ 
+ui/dist/app.html
+ui/dist/assets/
+ui/src/assets/
+
+# IDEs
+.DS_Store
+
+# Agents
+.claude/

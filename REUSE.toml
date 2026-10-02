@@ -1,10 +1,10 @@
 version = 1
-SPDX-PackageName = "Gardener <repo name>"
+SPDX-PackageName = "Gardener PromQL Querier"
 SPDX-PackageSupplier = "The Gardener project <gardener@googlegroups.com>"
-SPDX-PackageDownloadLocation = "https://github.com/gardener/<repo name>"
+SPDX-PackageDownloadLocation = "https://github.com/gardener/promql-querier"
 
 [[annotations]]
-path = ["*"]
+path = ["**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Contributors to the Gardener project"
 SPDX-License-Identifier = "Apache-2.0"
@@ -14,10 +14,3 @@ path = "**.md"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Contributors to the Gardener project"
 SPDX-License-Identifier = "CC-BY-4.0"
-
-# copied source
-# [[annotations]]
-# path = []
-# precedence = ""
-# SPDX-FileCopyrightText = ""
-# SPDX-License-Identifier = ""

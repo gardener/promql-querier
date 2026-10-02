@@ -1,0 +1,84 @@
+/* SPDX-FileCopyrightText: Contributors to the Gardener project */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Render uPlot's legend as a vertical list, one series per row. */
+.u-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 8px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.u-legend .u-series {
+  display: flex;
+  align-items: center;
+}
+
+.u-legend .u-series > * {
+  padding: 0 4px;
+}
+
+/* The per-point value lives in the cursor tooltip, so hide the value cell that
+   uPlot appends to each legend row, leaving a plain swatch and label list. */
+.u-legend .u-series .u-value {
+  display: none;
+}
+
+/* uPlot's first legend row is the x-axis series (labelled "Time:"); the
+   timestamp is shown in the cursor tooltip, so drop that row entirely. */
+.u-legend .u-series:first-child {
+  display: none;
+}
+
+/* uPlot appends ":" after each legend label via a pseudo-element when the
+   legend has the "u-live" class. We only show the swatch and label. */
+.u-legend .u-series th::after {
+  content: none;
+}
+
+/* Floating tooltip that follows the cursor over the graph. The offset from the
+   cursor is applied in JS so the popup can flip sides near the plot edges. */
+.u-tooltip {
+  position: absolute;
+  z-index: 100;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-sm);
+  padding: 6px 8px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 520px;
+}
+
+.u-tooltip-time {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* First body line: colour swatch plus "metric_name: value". */
+.u-tooltip-value-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Each label on its own line below the value. */
+.u-tooltip-label-line {
+  padding-left: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 500px;
+}
+
+.u-tooltip-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
