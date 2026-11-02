@@ -68,3 +68,10 @@ jobs:
           key: prometheus-${{ runner.os }}-${{ runner.arch }}-${{ steps.prometheus-version.outputs.version }}
       - run: make prometheus
       - run: make test-compare
+
+  reuse:
+    name: REUSE
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v5
