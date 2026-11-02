@@ -1,5 +1,7 @@
 # PromQL Querier
 
+[![REUSE status](https://api.reuse.software/badge/github.com/gardener/promql-querier)](https://api.reuse.software/info/github.com/gardener/promql-querier)
+
 Global querying across independent Prometheus instances.
 
 ## What it is
