@@ -8,6 +8,12 @@ The PromQL Querier sits in front of many independent Prometheus downstreams and 
 Each downstream is configured with a set of virtual labels, for example `env="prod"` and `region="eu"`, that the downstream itself does not store.
 The PromQL Querier owns those labels and injects them into the query results.
 
+## Talks
+
+The PromQL Querier was presented at PromCon 2026.
+
+- [A Prometheus-Native Approach to Global Querying](https://www.youtube.com/watch?v=3iCubwc19Gk) - PromCon 2026
+
 ## How it works
 
 The PromQL Querier parses the incoming PromQL into an AST and walks it, splitting the query into expressions that can be pushed down for evaluation in the downstreams directly and a local query that combines those pushed-down results and evaluates the remainder.
