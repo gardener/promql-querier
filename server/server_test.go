@@ -130,11 +130,11 @@ func TestParseLimit(t *testing.T) {
 type fakeAPI struct {
 	promv1.API
 
-	queryFn       func(context.Context) (model.Value, promv1.Warnings, error)
-	queryRangeFn  func(context.Context) (model.Value, promv1.Warnings, error)
-	seriesFn      func(context.Context) ([]model.LabelSet, promv1.Warnings, error)
-	labelNamesFn  func(context.Context) (model.LabelNames, promv1.Warnings, error)
-	labelValuesFn func(context.Context) (model.LabelValues, promv1.Warnings, error)
+	queryFn       func(context.Context) (model.Value, promv1.Warnings, promv1.Infos, error)
+	queryRangeFn  func(context.Context) (model.Value, promv1.Warnings, promv1.Infos, error)
+	seriesFn      func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error)
+	labelNamesFn  func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error)
+	labelValuesFn func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error)
 }
 
 func testServer(t *testing.T, clients ...promv1.API) *Server {
@@ -169,19 +169,19 @@ func testHandler(client promv1.API) http.HandlerFunc {
 		ctx := r.Context()
 		switch {
 		case r.URL.Path == "/api/v1/query_range":
-			result, _, _ := client.QueryRange(ctx, "", promv1.Range{})
+			result, _, _, _ := client.QueryRange(ctx, "", promv1.Range{})
 			writeQueryResult(w, result)
 		case r.URL.Path == "/api/v1/query":
-			result, _, _ := client.Query(ctx, "", time.Time{})
+			result, _, _, _ := client.Query(ctx, "", time.Time{})
 			writeQueryResult(w, result)
 		case r.URL.Path == "/api/v1/series":
-			result, _, _ := client.Series(ctx, nil, time.Time{}, time.Time{})
+			result, _, _, _ := client.Series(ctx, nil, time.Time{}, time.Time{})
 			writeMetadataResult(w, result)
 		case r.URL.Path == "/api/v1/labels":
-			result, _, _ := client.LabelNames(ctx, nil, time.Time{}, time.Time{})
+			result, _, _, _ := client.LabelNames(ctx, nil, time.Time{}, time.Time{})
 			writeMetadataResult(w, result)
 		case strings.HasPrefix(r.URL.Path, "/api/v1/label/"):
-			result, _, _ := client.LabelValues(ctx, "", nil, time.Time{}, time.Time{})
+			result, _, _, _ := client.LabelValues(ctx, "", nil, time.Time{}, time.Time{})
 			writeMetadataResult(w, result)
 		default:
 			http.NotFound(w, r)
@@ -189,23 +189,23 @@ func testHandler(client promv1.API) http.HandlerFunc {
 	}
 }
 
-func (f fakeAPI) Query(ctx context.Context, _ string, _ time.Time, _ ...promv1.Option) (model.Value, promv1.Warnings, error) {
+func (f fakeAPI) Query(ctx context.Context, _ string, _ time.Time, _ ...promv1.Option) (model.Value, promv1.Warnings, promv1.Infos, error) {
 	return f.queryFn(ctx)
 }
 
-func (f fakeAPI) QueryRange(ctx context.Context, _ string, _ promv1.Range, _ ...promv1.Option) (model.Value, promv1.Warnings, error) {
+func (f fakeAPI) QueryRange(ctx context.Context, _ string, _ promv1.Range, _ ...promv1.Option) (model.Value, promv1.Warnings, promv1.Infos, error) {
 	return f.queryRangeFn(ctx)
 }
 
-func (f fakeAPI) Series(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) ([]model.LabelSet, promv1.Warnings, error) {
+func (f fakeAPI) Series(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
 	return f.seriesFn(ctx)
 }
 
-func (f fakeAPI) LabelNames(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelNames, promv1.Warnings, error) {
+func (f fakeAPI) LabelNames(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
 	return f.labelNamesFn(ctx)
 }
 
-func (f fakeAPI) LabelValues(ctx context.Context, _ string, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelValues, promv1.Warnings, error) {
+func (f fakeAPI) LabelValues(ctx context.Context, _ string, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
 	return f.labelValuesFn(ctx)
 }
 
@@ -229,8 +229,8 @@ func writeMetadataResult(w http.ResponseWriter, data any) {
 }
 
 func hasSeries() fakeAPI {
-	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up"}}, nil, nil
+	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up"}}, nil, nil, nil
 	}}
 }
 
@@ -241,21 +241,21 @@ func respondingClient() fakeAPI {
 	return fakeAPI{
 		queryFn:      queryResult(vector(1)),
 		queryRangeFn: queryResult(vector(1)),
-		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-			return []model.LabelSet{{"__name__": "up"}}, nil, nil
+		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+			return []model.LabelSet{{"__name__": "up"}}, nil, nil, nil
 		},
-		labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-			return model.LabelNames{"__name__"}, nil, nil
+		labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+			return model.LabelNames{"__name__"}, nil, nil, nil
 		},
-		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-			return model.LabelValues{"up"}, nil, nil
+		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+			return model.LabelValues{"up"}, nil, nil, nil
 		},
 	}
 }
 
-func queryResult(value model.Value) func(context.Context) (model.Value, promv1.Warnings, error) {
-	return func(context.Context) (model.Value, promv1.Warnings, error) {
-		return value, nil, nil
+func queryResult(value model.Value) func(context.Context) (model.Value, promv1.Warnings, promv1.Infos, error) {
+	return func(context.Context) (model.Value, promv1.Warnings, promv1.Infos, error) {
+		return value, nil, nil, nil
 	}
 }
 
@@ -558,8 +558,8 @@ func TestHandleQueryRangeSuccess(t *testing.T) {
 }
 
 func TestHandleSeriesSuccess(t *testing.T) {
-	client := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil
+	client := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil, nil
 	}}
 	form := url.Values{"match[]": {`{job="api"}`}}
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/series?"+form.Encode(), nil)
@@ -572,8 +572,8 @@ func TestHandleSeriesSuccess(t *testing.T) {
 }
 
 func TestHandleSeriesEmitsWarningsInJSON(t *testing.T) {
-	client := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up"}}, nil, nil
+	client := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up"}}, nil, nil, nil
 	}}
 	form := url.Values{"limit": {"1"}, "match[]": {`{__name__!=""}`}}
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/series?"+form.Encode(), nil)
@@ -606,8 +606,8 @@ func TestHandleSeriesInvalidMatcher(t *testing.T) {
 // an empty series result must serialize as "data": [], not be omitted. A missing
 // data field makes the Prometheus client fail to decode the response.
 func TestHandleSeriesEmptyResultEncodesEmptyArray(t *testing.T) {
-	empty := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return nil, nil, nil
+	empty := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return nil, nil, nil, nil
 	}}
 	form := url.Values{"match[]": {`{job="nonexistent"}`}}
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/series?"+form.Encode(), nil)
@@ -636,8 +636,8 @@ func TestHandleSeriesInvalidTime(t *testing.T) {
 }
 
 func TestHandleLabelNamesSuccess(t *testing.T) {
-	client := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job", "instance"}, nil, nil
+	client := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job", "instance"}, nil, nil, nil
 	}}
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/labels", nil)
 
