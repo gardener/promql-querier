@@ -61,16 +61,16 @@ func (m *Metadata) Series(ctx context.Context, matchers []string, start, end tim
 		return nil, nil, err
 	}
 
-	call := func(ds Downstream, matches []string) ([]model.LabelSet, promv1.Warnings, error) {
-		sers, warns, err := ds.client.Series(ctx, matches, start, end, withLimit(limit)...)
+	call := func(ds Downstream, matches []string) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		sers, warns, infos, err := ds.client.Series(ctx, matches, start, end, withLimit(limit)...)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		injected := make([]model.LabelSet, len(sers))
 		for j, s := range sers {
 			injected[j] = withVirtualLabelSet(s, ds.labels)
 		}
-		return injected, warns, nil
+		return injected, warns, infos, nil
 	}
 
 	series, warnings, err := fanOut(ctx, m, plan, "series", call)
@@ -110,8 +110,8 @@ func (m *Metadata) LabelNames(ctx context.Context, matchers []string, start, end
 		return nil, nil, err
 	}
 
-	call := func(ds Downstream, matches []string) ([]string, promv1.Warnings, error) {
-		labelNames, warnings, err := ds.client.LabelNames(ctx, matches, start, end, withLimit(limit)...)
+	call := func(ds Downstream, matches []string) ([]string, promv1.Warnings, promv1.Infos, error) {
+		labelNames, warnings, infos, err := ds.client.LabelNames(ctx, matches, start, end, withLimit(limit)...)
 		names := make([]string, len(labelNames))
 		for i, name := range labelNames {
 			names[i] = string(name)
@@ -121,7 +121,7 @@ func (m *Metadata) LabelNames(ctx context.Context, matchers []string, start, end
 				names = append(names, name)
 			}
 		}
-		return names, warnings, err
+		return names, warnings, infos, err
 	}
 
 	names, warnings, err := fanOut(ctx, m, plan, "labels", call)
@@ -166,7 +166,7 @@ func (m *Metadata) LabelValues(ctx context.Context, label string, matchers []str
 		return result, warnings, err
 	}
 
-	call := func(ds Downstream, matches []string) ([]model.LabelValue, promv1.Warnings, error) {
+	call := func(ds Downstream, matches []string) ([]model.LabelValue, promv1.Warnings, promv1.Infos, error) {
 		return ds.client.LabelValues(ctx, label, matches, start, end, withLimit(limit)...)
 	}
 
@@ -198,7 +198,7 @@ func fanOut[T any](
 	m *Metadata,
 	plan metadataPlan,
 	name string,
-	call func(ds Downstream, match []string) ([]T, promv1.Warnings, error),
+	call func(ds Downstream, match []string) ([]T, promv1.Warnings, promv1.Infos, error),
 ) ([]T, promv1.Warnings, error) {
 	var (
 		wg       sync.WaitGroup
@@ -244,7 +244,7 @@ func fanOut[T any](
 				return
 			}
 			defer release()
-			result, warns, err := call(ds, matches)
+			result, warns, _, err := call(ds, matches)
 			collect(url, result, warns, err)
 		}(url)
 	}
@@ -312,20 +312,20 @@ func (m *Metadata) downstreamURLs() []string {
 // downstreams. It uses Series() to probe if downstreams contain a series for the
 // corresponding time window.
 func (m *Metadata) virtualLabelValues(ctx context.Context, label string, plan metadataPlan, start, end time.Time) (model.LabelValues, promv1.Warnings, error) {
-	call := func(ds Downstream, matches []string) ([]string, promv1.Warnings, error) {
+	call := func(ds Downstream, matches []string) ([]string, promv1.Warnings, promv1.Infos, error) {
 		value, ok := ds.labels[label]
 		if !ok || value == "" {
-			return nil, nil, nil
+			return nil, nil, nil, nil
 		}
 
-		series, warns, err := ds.client.Series(ctx, matches, start, end, withLimit(1)...)
+		series, warns, infos, err := ds.client.Series(ctx, matches, start, end, withLimit(1)...)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		if len(series) == 0 {
-			return nil, warns, nil
+			return nil, warns, infos, nil
 		}
-		return []string{value}, warns, nil
+		return []string{value}, warns, infos, nil
 	}
 
 	duplicated, warnings, err := fanOut(ctx, m, plan, "virtual-label/values", call)

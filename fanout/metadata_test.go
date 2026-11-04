@@ -117,20 +117,20 @@ func TestPlanMatchers(t *testing.T) {
 type fakeAPI struct {
 	promv1.API
 
-	seriesFn      func(ctx context.Context) ([]model.LabelSet, promv1.Warnings, error)
-	labelNamesFn  func(ctx context.Context) (model.LabelNames, promv1.Warnings, error)
-	labelValuesFn func(ctx context.Context) (model.LabelValues, promv1.Warnings, error)
+	seriesFn      func(ctx context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error)
+	labelNamesFn  func(ctx context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error)
+	labelValuesFn func(ctx context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error)
 }
 
-func (f fakeAPI) Series(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) ([]model.LabelSet, promv1.Warnings, error) {
+func (f fakeAPI) Series(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
 	return f.seriesFn(ctx)
 }
 
-func (f fakeAPI) LabelNames(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelNames, promv1.Warnings, error) {
+func (f fakeAPI) LabelNames(ctx context.Context, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
 	return f.labelNamesFn(ctx)
 }
 
-func (f fakeAPI) LabelValues(ctx context.Context, _ string, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelValues, promv1.Warnings, error) {
+func (f fakeAPI) LabelValues(ctx context.Context, _ string, _ []string, _, _ time.Time, _ ...promv1.Option) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
 	return f.labelValuesFn(ctx)
 }
 
@@ -153,15 +153,15 @@ func testDownstreams(clients ...promv1.API) map[string]Downstream {
 
 // hasSeries is a fakeAPI whose Series returns one series.
 func hasSeries() fakeAPI {
-	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up"}}, nil, nil
+	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up"}}, nil, nil, nil
 	}}
 }
 
 // noSeries is a fakeAPI whose Series returns nothing.
 func noSeries() fakeAPI {
-	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return nil, nil, nil
+	return fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return nil, nil, nil, nil
 	}}
 }
 
@@ -236,11 +236,11 @@ func TestSeriesErrorsWhenMatchIsEmpty(t *testing.T) {
 
 func TestSeriesInjectsVirtualLabelsAndDedupes(t *testing.T) {
 	shared := model.LabelSet{"__name__": "up", "job": "api"}
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{shared}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{shared}, nil, nil, nil
 	}}
-	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{shared}, nil, nil
+	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{shared}, nil, nil, nil
 	}}
 
 	result, _, err := testMetadata(eu, us).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 0)
@@ -252,11 +252,11 @@ func TestSeriesInjectsVirtualLabelsAndDedupes(t *testing.T) {
 }
 
 func TestLabelNamesMergesVirtualNames(t *testing.T) {
-	eu := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job", "instance"}, nil, nil
+	eu := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job", "instance"}, nil, nil, nil
 	}}
-	us := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job"}, nil, nil
+	us := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job"}, nil, nil, nil
 	}}
 
 	result, _, err := testMetadata(eu, us).LabelNames(context.Background(), nil, time.Time{}, time.Time{}, 0)
@@ -265,11 +265,11 @@ func TestLabelNamesMergesVirtualNames(t *testing.T) {
 }
 
 func TestLabelValuesDedupesAcrossDownstreams(t *testing.T) {
-	eu := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-		return model.LabelValues{"api", "web"}, nil, nil
+	eu := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelValues{"api", "web"}, nil, nil, nil
 	}}
-	us := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-		return model.LabelValues{"web", "db"}, nil, nil
+	us := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelValues{"web", "db"}, nil, nil, nil
 	}}
 
 	result, _, err := testMetadata(eu, us).LabelValues(context.Background(), "job", nil, time.Time{}, time.Time{}, 0)
@@ -310,11 +310,11 @@ func TestLabelValuesForVirtualLabelReturnsNothingWhenNoDownstreamHasSeries(t *te
 func TestSeriesReturnsPartialResultWhenDownstreamFails(t *testing.T) {
 	// A failed downstream must not fail the whole request: autocompletion still
 	// gets the series from the healthy downstream.
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil, nil
 	}}
-	boom := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return nil, nil, context.DeadlineExceeded
+	boom := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return nil, nil, nil, context.DeadlineExceeded
 	}}
 
 	result, _, err := testMetadata(eu, boom).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 0)
@@ -327,11 +327,11 @@ func TestSeriesReturnsPartialResultWhenDownstreamFails(t *testing.T) {
 func TestSeriesFailsWhenDownstreamReturnsAPIError(t *testing.T) {
 	// A *promv1.Error means the downstream understood the request and rejected it,
 	// so the whole call fails rather than returning a partial result.
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil, nil
 	}}
-	rejected := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return nil, nil, &promv1.Error{Type: promv1.ErrBadData, Msg: "invalid parameter"}
+	rejected := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return nil, nil, nil, &promv1.Error{Type: promv1.ErrBadData, Msg: "invalid parameter"}
 	}}
 
 	_, _, err := testMetadata(eu, rejected).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 0)
@@ -343,11 +343,11 @@ func TestSeriesFailsWhenDownstreamReturnsAPIError(t *testing.T) {
 func TestSeriesWarnsAndContinuesOnTransportError(t *testing.T) {
 	// A transport-level error (not a *promv1.Error) drops only the failing
 	// downstream.
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "up", "job": "api"}}, nil, nil, nil
 	}}
-	boom := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return nil, nil, fmt.Errorf("connection refused")
+	boom := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return nil, nil, nil, fmt.Errorf("connection refused")
 	}}
 
 	result, warnings, err := testMetadata(eu, boom).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 0)
@@ -358,11 +358,11 @@ func TestSeriesWarnsAndContinuesOnTransportError(t *testing.T) {
 }
 
 func TestSeriesPropagatesWarningFromDownstreams(t *testing.T) {
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "a"}}, promv1.Warnings{"results truncated due to limit"}, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "a"}}, promv1.Warnings{"results truncated due to limit"}, nil, nil
 	}}
-	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "b"}}, promv1.Warnings{"results truncated due to limit"}, nil
+	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "b"}}, promv1.Warnings{"results truncated due to limit"}, nil, nil
 	}}
 
 	_, warnings, err := testMetadata(eu, us).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 0)
@@ -374,11 +374,11 @@ func TestSeriesPropagatesWarningFromDownstreams(t *testing.T) {
 }
 
 func TestSeriesTruncatesToLimit(t *testing.T) {
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "b"}, {"__name__": "d"}}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "b"}, {"__name__": "d"}}, nil, nil, nil
 	}}
-	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "a"}, {"__name__": "c"}}, nil, nil
+	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "a"}, {"__name__": "c"}}, nil, nil, nil
 	}}
 
 	result, warnings, err := testMetadata(eu, us).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 2)
@@ -388,11 +388,11 @@ func TestSeriesTruncatesToLimit(t *testing.T) {
 }
 
 func TestSeriesNoTruncationWarningWithinLimit(t *testing.T) {
-	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "a"}}, nil, nil
+	eu := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "a"}}, nil, nil, nil
 	}}
-	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-		return []model.LabelSet{{"__name__": "b"}}, nil, nil
+	us := fakeAPI{seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+		return []model.LabelSet{{"__name__": "b"}}, nil, nil, nil
 	}}
 
 	_, warnings, err := testMetadata(eu, us).Series(context.Background(), []string{`{__name__!=""}`}, time.Time{}, time.Time{}, 5)
@@ -401,11 +401,11 @@ func TestSeriesNoTruncationWarningWithinLimit(t *testing.T) {
 }
 
 func TestLabelNamesTruncatesToLimit(t *testing.T) {
-	eu := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job", "instance"}, nil, nil
+	eu := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job", "instance"}, nil, nil, nil
 	}}
-	us := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job"}, nil, nil
+	us := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job"}, nil, nil, nil
 	}}
 
 	result, warnings, err := testMetadata(eu, us).LabelNames(context.Background(), nil, time.Time{}, time.Time{}, 2)
@@ -415,11 +415,11 @@ func TestLabelNamesTruncatesToLimit(t *testing.T) {
 }
 
 func TestLabelValuesTruncatesToLimit(t *testing.T) {
-	eu := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-		return model.LabelValues{"api", "web"}, nil, nil
+	eu := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelValues{"api", "web"}, nil, nil, nil
 	}}
-	us := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-		return model.LabelValues{"web", "db"}, nil, nil
+	us := fakeAPI{labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelValues{"web", "db"}, nil, nil, nil
 	}}
 
 	result, warnings, err := testMetadata(eu, us).LabelValues(context.Background(), "job", nil, time.Time{}, time.Time{}, 2)
@@ -430,19 +430,19 @@ func TestLabelValuesTruncatesToLimit(t *testing.T) {
 
 func TestLabelValuesForVirtualLabelTruncatesToLimit(t *testing.T) {
 	eu := fakeAPI{
-		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-			return model.LabelValues{"api", "web"}, nil, nil
+		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+			return model.LabelValues{"api", "web"}, nil, nil, nil
 		},
-		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-			return []model.LabelSet{{"__name__": "b"}, {"__name__": "d"}}, nil, nil
+		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+			return []model.LabelSet{{"__name__": "b"}, {"__name__": "d"}}, nil, nil, nil
 		},
 	}
 	us := fakeAPI{
-		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, error) {
-			return model.LabelValues{"web", "db"}, nil, nil
+		labelValuesFn: func(context.Context) (model.LabelValues, promv1.Warnings, promv1.Infos, error) {
+			return model.LabelValues{"web", "db"}, nil, nil, nil
 		},
-		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, error) {
-			return []model.LabelSet{{"__name__": "a"}, {"__name__": "c"}}, nil, nil
+		seriesFn: func(context.Context) ([]model.LabelSet, promv1.Warnings, promv1.Infos, error) {
+			return []model.LabelSet{{"__name__": "a"}, {"__name__": "c"}}, nil, nil, nil
 		},
 	}
 
@@ -453,8 +453,8 @@ func TestLabelValuesForVirtualLabelTruncatesToLimit(t *testing.T) {
 }
 
 func TestLabelNamesOmitsVirtualNameWithoutValues(t *testing.T) {
-	ds := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job", "instance"}, nil, nil
+	ds := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job", "instance"}, nil, nil, nil
 	}}
 
 	downstreams := map[string]Downstream{}
@@ -469,8 +469,8 @@ func TestLabelNamesOmitsVirtualNameWithoutValues(t *testing.T) {
 }
 
 func TestLabelNamesOmitsVirtualNameWhenMatcherRoutesNowhere(t *testing.T) {
-	ds := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, error) {
-		return model.LabelNames{"job", "instance"}, nil, nil
+	ds := fakeAPI{labelNamesFn: func(context.Context) (model.LabelNames, promv1.Warnings, promv1.Infos, error) {
+		return model.LabelNames{"job", "instance"}, nil, nil, nil
 	}}
 
 	result, _, err := testMetadata(ds).LabelNames(context.Background(), []string{`{region="nonexistent"}`}, time.Time{}, time.Time{}, 0)

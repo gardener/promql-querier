@@ -63,13 +63,13 @@ func (c *Compare) CompareQuery(t *testing.T, query string, ts int64, opts ...Opt
 		opt(&o)
 	}
 
-	wantResult, _, err := c.reference.Query(context.Background(), query, time.UnixMilli(ts))
+	wantResult, _, _, err := c.reference.Query(context.Background(), query, time.UnixMilli(ts))
 	require.NoError(t, err, "reference query")
 	if !o.shouldBeEmpty {
 		requireResultNotEmpty(t, wantResult)
 	}
 
-	gotResult, _, err := c.promqlQuerier.Query(context.Background(), query, time.UnixMilli(ts))
+	gotResult, _, _, err := c.promqlQuerier.Query(context.Background(), query, time.UnixMilli(ts))
 	require.NoError(t, err, "promql-querier query")
 	requireValuesEqual(t, wantResult, gotResult, o.doNotSort)
 }
@@ -89,13 +89,13 @@ func (c *Compare) CompareQueryRange(t *testing.T, query string, start, end int64
 		Step:  time.Duration(step) * time.Second,
 	}
 
-	wantResult, _, err := c.reference.QueryRange(context.Background(), query, rng)
+	wantResult, _, _, err := c.reference.QueryRange(context.Background(), query, rng)
 	require.NoError(t, err, "reference query range")
 	if !o.shouldBeEmpty {
 		requireResultNotEmpty(t, wantResult)
 	}
 
-	gotResult, _, err := c.promqlQuerier.QueryRange(context.Background(), query, rng)
+	gotResult, _, _, err := c.promqlQuerier.QueryRange(context.Background(), query, rng)
 	require.NoError(t, err, "promql-querier query range")
 	requireValuesEqual(t, wantResult, gotResult, o.doNotSort)
 }
@@ -104,12 +104,12 @@ func (c *Compare) CompareQueryRange(t *testing.T, query string, start, end int64
 // returned label sets match.
 func (c *Compare) CompareSeries(t *testing.T, matchers []string, start, end time.Time) {
 	t.Helper()
-	wantResult, _, err := c.reference.Series(context.Background(), matchers, start, end)
+	wantResult, _, _, err := c.reference.Series(context.Background(), matchers, start, end)
 	require.NoError(t, err, "reference series")
 	require.NotEmpty(t, wantResult, "reference returned no data")
 	sortLabelSets(wantResult)
 
-	gotResult, _, err := c.promqlQuerier.Series(context.Background(), matchers, start, end)
+	gotResult, _, _, err := c.promqlQuerier.Series(context.Background(), matchers, start, end)
 	require.NoError(t, err, "promql-querier series")
 	sortLabelSets(gotResult)
 	require.Equal(t, wantResult, gotResult, "promql-querier mismatch: want %v, got %v", wantResult, gotResult)
@@ -119,10 +119,10 @@ func (c *Compare) CompareSeries(t *testing.T, matchers []string, start, end time
 // the same /api/v1/series request.
 func (c *Compare) CompareSeriesError(t *testing.T, matchers []string, start, end time.Time) {
 	t.Helper()
-	_, _, wantErr := c.reference.Series(context.Background(), matchers, start, end)
+	_, _, _, wantErr := c.reference.Series(context.Background(), matchers, start, end)
 	require.Error(t, wantErr, "[%s] want error from reference, got nil", matchers)
 
-	_, _, gotErr := c.promqlQuerier.Series(context.Background(), matchers, start, end)
+	_, _, _, gotErr := c.promqlQuerier.Series(context.Background(), matchers, start, end)
 	require.Error(t, gotErr, "[%s] want error from promql-querier, got nil", matchers)
 }
 
@@ -130,12 +130,12 @@ func (c *Compare) CompareSeriesError(t *testing.T, matchers []string, start, end
 // the returned label names match.
 func (c *Compare) CompareLabelNames(t *testing.T, matchers []string, start, end time.Time) {
 	t.Helper()
-	wantResult, _, err := c.reference.LabelNames(context.Background(), matchers, start, end)
+	wantResult, _, _, err := c.reference.LabelNames(context.Background(), matchers, start, end)
 	require.NoError(t, err, "reference label names")
 	require.NotEmpty(t, wantResult, "reference returned no data")
 	sort.Sort(wantResult)
 
-	gotResult, _, err := c.promqlQuerier.LabelNames(context.Background(), matchers, start, end)
+	gotResult, _, _, err := c.promqlQuerier.LabelNames(context.Background(), matchers, start, end)
 	require.NoError(t, err, "promql-querier label names")
 	sort.Sort(gotResult)
 	require.Equal(t, wantResult, gotResult, "promql-querier mismatch: want %v, got %v", wantResult, gotResult)
@@ -145,12 +145,12 @@ func (c *Compare) CompareLabelNames(t *testing.T, matchers []string, start, end 
 // APIs and asserts the returned values match.
 func (c *Compare) CompareLabelValues(t *testing.T, label string, matchers []string, start, end time.Time) {
 	t.Helper()
-	wantResult, _, err := c.reference.LabelValues(context.Background(), label, matchers, start, end)
+	wantResult, _, _, err := c.reference.LabelValues(context.Background(), label, matchers, start, end)
 	require.NoError(t, err, "reference label values(%s)", label)
 	require.NotEmpty(t, wantResult, "reference returned no data")
 	sort.Sort(wantResult)
 
-	gotResult, _, err := c.promqlQuerier.LabelValues(context.Background(), label, matchers, start, end)
+	gotResult, _, _, err := c.promqlQuerier.LabelValues(context.Background(), label, matchers, start, end)
 	require.NoError(t, err, "promql-querier label values(%s)", label)
 	sort.Sort(gotResult)
 	require.Equal(t, wantResult, gotResult, "promql-querier mismatch: want %v, got %v", wantResult, gotResult)
