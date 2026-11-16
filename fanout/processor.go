@@ -156,7 +156,7 @@ func (proc *Processor) NewRangeQuery(query string, start, end time.Time, step ti
 }
 
 func (proc *Processor) newLocalQuery(ctx context.Context, p *plan.Plan, fetched fetchedSeries, expr string) (promql.Query, error) {
-	opts := promql.NewPrometheusQueryOpts(false, 0)
+	opts := promql.NewPrometheusQueryOpts(false, 0, nil)
 	if p.IsRange() {
 		return proc.engine.NewRangeQuery(ctx, fetched, opts, expr, p.Start(), p.End(), p.Step())
 	}

@@ -88,6 +88,7 @@ var (
 		"hour":                         {preservesWithArgument, false},
 		"idelta":                       {preserves, false},
 		"increase":                     {preserves, false},
+		"integral":                     {preserves, false},
 		"irate":                        {preserves, false},
 		"label_join":                   {labelJoinPreserves, false},
 		"label_replace":                {labelReplacePreserves, false},

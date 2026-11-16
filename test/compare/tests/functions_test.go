@@ -54,6 +54,7 @@ func TestFunctions(t *testing.T) {
 		{name: "hour", query: `hour(container_memory_working_set_bytes)`},
 		{name: "idelta", query: `idelta(container_memory_working_set_bytes[10m])`},
 		{name: "increase range function", query: `increase(container_cpu_usage_seconds_total{container="backend"}[5m])`},
+		{name: "integral range function", query: `integral(container_cpu_usage_seconds_total{container="backend"}[5m])`},
 		{name: "irate range function", query: `irate(container_cpu_usage_seconds_total{container="backend"}[5m])`},
 		{name: "label_join non virtual sources", query: `label_join(container_memory_working_set_bytes{env="prod"}, "id", "/", "container")`},
 		{name: "label_join virtual label as source", query: `label_join(container_memory_working_set_bytes, "loc", "-", "env", "region")`},
