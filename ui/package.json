@@ -22,26 +22,26 @@
         "@codemirror/lint": "^6.9.8",
         "@codemirror/state": "^6.7.6",
         "@codemirror/view": "^6.43.15",
-        "@lezer/common": "^1.5.5",
+        "@lezer/common": "^1.5.6",
         "@lezer/highlight": "^1.2.5",
-        "@mantine/core": "^9.8.1",
-        "@mantine/dates": "^9.8.1",
+        "@mantine/core": "^9.8.2",
+        "@mantine/dates": "^9.8.2",
         "@mantine/hooks": "^9.6.0",
         "@prometheus-io/codemirror-promql": "0.316.0",
-        "@tabler/icons-react": "^3.52.0",
+        "@tabler/icons-react": "^3.53.0",
         "dayjs": "^1.11.23",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
         "uplot": "1.6.32"
     },
     "devDependencies": {
-        "@types/react": "^19.3.0",
+        "@types/react": "^19.3.1",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.3.0",
         "prettier": "^3.10.1",
         "typescript": "^7.0.2",
         "vite": "^8.3.8",
-        "vitest": "^5.1.0"
+        "vitest": "^5.1.1"
     },
     "allowScripts": {
         "esbuild@0.21.5": true
