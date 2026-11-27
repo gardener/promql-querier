@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/klauspost/compress v1.20.4
+	github.com/klauspost/compress v1.20.5
 	github.com/prometheus/client_golang v1.25.0
 	github.com/prometheus/common v0.74.0
 	github.com/prometheus/prometheus v0.316.0
